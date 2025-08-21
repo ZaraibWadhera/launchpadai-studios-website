@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LaunchPad AI Studios</title>
+    <!-- Load React and ReactDOM from CDN for simplicity -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Load Babel so we can write JSX directly in the browser -->
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <!-- Tailwind CSS via CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="antialiased bg-white">
+    <div id="root"></div>
+    <script type="text/babel">
+      // Site configuration (edit these to your real details)
+      const CONFIG = {
+        companyName: "LaunchPad Ai Studios",
+        tagline: "Your Front Desk, Reinvented.",
+        email: "launchpadaistudios@gmail.com",
+        phoneE164: "+16475729461",
+        phonePretty: "(647)5729461",
+        location: "Toronto, Canada",
+        // Calendly scheduling link (leave blank to show booking instructions instead)
+        calendlyUrl: "https://calendly.com/launchpadaistudios/new-meeting",
+        // FormSubmit endpoint (replace with your token)
+        formEndpoint: "https://formsubmit.co/ajax/aa55f49228ac2a9f3e9822fea2533b88",
+      };
+
+      // Normalize a hash to a route (ensures a leading slash)
+      function routeFromHash(hash) {
+        const raw = hash.replace(/^#/, "");
+        if (!raw) return "/";
+        return raw.startsWith("/") ? raw : "/" + raw;
+      }
+      // Get the current route from the URL hash
+      function getRoute() {
+        return routeFromHash(window.location.hash);
+      }
+
+      function App() {
+        return <Site />;
+      }
+
+      function Site() {
+        const [route, setRoute] = React.useState(getRoute());
+        const [mobileOpen, setMobileOpen] = React.useState(false);
+        // Listen for hash changes to update the route
+        React.useEffect(() => {
+          const onHash = () => setRoute(getRoute());
+          window.addEventListener("hashchange", onHash);
+          return () => window.removeEventListener("hashchange", onHash);
+        }, []);
+        // Close the mobile menu on route change and scroll to top
+        React.useEffect(() => {
+          setMobileOpen(false);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, [route]);
+        // Intercept clicks on in-app links so the sandbox doesn't try to navigate
+        React.useEffect(() => {
+          const onDocClick = (e) => {
+            const a = e.target && e.target.closest ? e.target.closest("a") : null;
+            if (!a) return;
+            const href = a.getAttribute("href") || "";
+            if (href.startsWith("#/")) {
+              e.preventDefault();
+              setRoute(href.slice(1));
+            }
+          };
+          document.addEventListener("click", onDocClick);
+          return () => document.removeEventListener("click", onDocClick);
+        }, []);
+        // Determine which page component to render based on the current route
+        const CurrentPage = React.useMemo(() => {
+          switch (route) {
+            case "/about":
+              return AboutPage;
+            case "/services":
+              return ServicesPage;
+            case "/contact":
+              return ContactPage;
+            case "/consultation":
+              return BookPage;
+            default:
+              return HomePage;
+          }
+        }, [route]);
+        return (
+          <div className="min-h-screen text-slate-800 relative">
+            <Background />
+            {/* Header with navigation */}
+            <header className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/70 border-b border-teal-100">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16">
+                  <a href="#/" className="flex items-center gap-2 group">
+                    <Logo />
+                    <div className="leading-tight">
+                      <div className="font-extrabold tracking-tight text-xl text-teal-700 group-hover:text-teal-800">{CONFIG.companyName}</div>
+                      <div className="text-xs sm:text-sm text-slate-600">{CONFIG.tagline}</div>
+                    </div>
+                  </a>
+                  <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+                    <NavLink href="#/">Home</NavLink>
+                    <NavLink href="#/about">About</NavLink>
+                    <NavLink href="#/services">Services</NavLink>
+                    <NavLink href="#/consultation">Consultation</NavLink>
+                    <NavLink href="#/contact">Contact</NavLink>
+                    <a
+                      href={"tel:" + CONFIG.phoneE164}
+                      className="ml-2 inline-flex items-center rounded-xl px-3 py-2 border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-700"
+                    >
+                      Call: {CONFIG.phonePretty}
+                    </a>
+                  </nav>
+                  <button
+                    onClick={() => setMobileOpen((v) => !v)}
+                    className="md:hidden inline-flex items-center justify-center p-2 rounded-lg border border-slate-200 bg-white/70 hover:bg-white focus:outline-none"
+                  >
+                    <span className="sr-only">Toggle navigation</span>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-slate-700">
+                      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              {/* Mobile menu */}
+              {mobileOpen && (
+                <div className="md:hidden border-t border-slate-200 bg-white/90 backdrop-blur">
+                  <div className="px-4 py-3 flex flex-col gap-2">
+                    <MobileLink href="#/">Home</MobileLink>
+                    <MobileLink href="#/about">About</MobileLink>
+                    <MobileLink href="#/services">Services</MobileLink>
+                    <MobileLink href="#/consultation">Consultation</MobileLink>
+                    <MobileLink href="#/contact">Contact</MobileLink>
+                    <a
+                      href={"tel:" + CONFIG.phoneE164}
+                      className="mt-1 inline-flex items-center justify-center rounded-xl px-3 py-2 border border-teal-200 bg-teal-50 text-teal-700"
+                    >
+                      Call: {CONFIG.phonePretty}
+                    </a>
+                  </div>
+                </div>
+              )}
+            </header>
+            <main className="relative z-10">
+              <CurrentPage />
+            </main>
+            {/* Footer */}
+            <footer className="relative z-10 mt-20 border-t border-slate-200/70 bg-white/70 backdrop-blur">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-8 text-sm">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Logo small />
+                    <span className="font-semibold">{CONFIG.companyName}</span>
+                  </div>
+                  <p className="text-slate-600">We build AI phone/chat receptionists and conversion‑focused websites that connect businesses and clients.</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Pages</h4>
+                  <ul className="space-y-1 text-slate-700">
+                    <li><FooterLink href="#/">Home</FooterLink></li>
+                    <li><FooterLink href="#/about">About</FooterLink></li>
+                    <li><FooterLink href="#/services">Services</FooterLink></li>
+                    <li><FooterLink href="#/consultation">Consultation</FooterLink></li>
+                    <li><FooterLink href="#/contact">Contact</FooterLink></li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Contact</h4>
+                  <ul className="space-y-1 text-slate-700">
+                    <li>
+                      Email: <a className="underline decoration-teal-300 hover:decoration-teal-500" href={"mailto:" + CONFIG.email}>{CONFIG.email}</a>
+                    </li>
+                    <li>
+                      Phone: <a className="underline decoration-teal-300 hover:decoration-teal-500" href={"tel:" + CONFIG.phoneE164}>{CONFIG.phonePretty}</a>
+                    </li>
+                    <li>{CONFIG.location}</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Tagline</h4>
+                  <p className="italic text-slate-700">“{CONFIG.tagline}”</p>
+                </div>
+              </div>
+              <div className="text-center text-xs text-slate-500 pb-8">© {new Date().getFullYear()} {CONFIG.companyName}. All rights reserved.</div>
+            </footer>
+          </div>
+        );
+      }
+
+      /* Navigation link components */
+      function NavLink({ href, children }) {
+        return (
+          <a
+            href={href}
+            className="px-2 py-2 rounded-lg transition text-slate-700 hover:text-teal-800"
+          >
+            {children}
+          </a>
+        );
+      }
+      function MobileLink({ href, children }) {
+        return (
+          <a
+            href={href}
+            className="px-2 py-2 rounded-md text-slate-800 hover:bg-slate-100"
+          >
+            {children}
+          </a>
+        );
+      }
+      function FooterLink({ href, children }) {
+        return (
+          <a href={href} className="hover:text-teal-700">
+            {children}
+          </a>
+        );
+      }
+
+      /* Background gradient and grid */
+      function Background() {
+        return (
+          <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
+            {/* Soft mesh gradient */}
+            <div
+              className="absolute inset-0 opacity-90"
+              style={{
+                background:
+                  `radial-gradient(35% 35% at 20% 20%, #ccfbf1 0%, rgba(204,251,241,0) 60%),` +
+                  `radial-gradient(35% 35% at 80% 0%, #fde68a 0%, rgba(253,230,138,0) 55%),` +
+                  `radial-gradient(50% 50% at 120% 60%, #99f6e4 0%, rgba(153,246,228,0) 60%),` +
+                  `linear-gradient(180deg, #ffffff 0%, #ecfeff 100%)`,
+              }}
+            />
+            {/* Subtle grid overlay */}
+            <svg
+              className="absolute inset-0 w-full h-full opacity-[0.08]"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                  <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#0f766e" strokeWidth="0.5" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+          </div>
+        );
+      }
+
+      /* Logo component */
+      function Logo({ small }) {
+        return (
+          <div
+            className={
+              "shrink-0 rounded-2xl flex items-center justify-center bg-teal-600 text-white " +
+              (small ? "w-8 h-8" : "w-10 h-10")
+            }
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className={small ? "w-4 h-4" : "w-5 h-5"}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {/* A simple rocket */}
+              <path d="M5 14c4-1 8-5 9-9 4 1 6 3 7 7-4 1-8 5-9 9-4-1-6-3-7-7Z" />
+              <path d="M9 15l-3 3" />
+              <circle cx="14" cy="8" r="1.5" />
+            </svg>
+          </div>
+        );
+      }
+
+      /* -------------- PAGE COMPONENTS -------------- */
+      function HomePage() {
+        return (
+          <>
+            <section className="relative isolate">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                <div className="grid lg:grid-cols-2 gap-10 items-center">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/70 backdrop-blur px-3 py-1 text-xs text-teal-800">
+                      <span className="inline-block w-2 h-2 rounded-full bg-teal-500"></span>
+                      24/7 AI Phone + Chat Reception
+                    </div>
+                    <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+                      Keep every client <span className="text-teal-700">connected</span> —
+                      from <span className="text-teal-700">call</span> to <span className="text-teal-700">conversion</span>.
+                    </h1>
+                    <p className="mt-4 text-lg text-slate-700 max-w-xl">
+                      We build AI receptionists for phone and web, plus modern websites that convert. One partner to handle your entire client pipeline.
+                    </p>
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <a
+                        href="#/consultation"
+                        className="inline-flex items-center rounded-xl px-5 py-3 bg-teal-600 text-white font-semibold hover:bg-teal-700 shadow-md shadow-teal-600/20"
+                      >
+                        Book a Consultation
+                      </a>
+                      <a
+                        href="#/services"
+                        className="inline-flex items-center rounded-xl px-5 py-3 border border-teal-300/70 bg-white/70 hover:bg-white/90 text-teal-800"
+                      >
+                        View Services
+                      </a>
+                    </div>
+                    <div className="mt-6 flex items-center gap-6 text-sm text-slate-600">
+                      <div className="flex items-center gap-2">
+                        <CheckIcon /> Call Answering
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckIcon /> Appointment Booking
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckIcon /> Lead Capture
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    {/* Hero card */}
+                    <div className="rounded-3xl p-6 bg-white/70 backdrop-blur border border-teal-100 shadow-xl shadow-teal-600/10">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <FeatureCard title="AI Phone Receptionist" subtitle="Answers, routes & books" icon={<PhoneIcon />} />
+                        <FeatureCard title="Website Chat Concierge" subtitle="Instant FAQ + intake" icon={<ChatIcon />} />
+                        <FeatureCard title="Complex Web Dev" subtitle="Fast, modern, reliable" icon={<CodeIcon />} />
+                        <FeatureCard title="CRM &amp; Calendar" subtitle="Integrations that click" icon={<PlugIcon />} />
+                      </div>
+                      <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
+                        <strong className="font-semibold">Why clients pick us:</strong> one team for calls, chat, and your website — so nothing falls through the cracks.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section className="py-16">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 className="text-2xl font-bold text-slate-900">Industries We Serve</h2>
+                <p className="text-slate-600 mt-2">We work across industries — these are common examples.</p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {[
+                    "Dental Clinics",
+                    "Law Firms",
+                    "Real Estate",
+                    "Contractors",
+                    "Gyms & Clinics",
+                    "Salons & Spas",
+                    "Auto Shops",
+                    "Home Services",
+                    "Medical & Wellness",
+                    "Education & Training",
+                    "Hospitality",
+                    "Property Management",
+                    "Financial Services",
+                    "IT & SaaS",
+                    "Nonprofits",
+                    "E‑commerce Support",
+                    "…and more",
+                  ].map((t) => (
+                    <span
+                      key={t}
+                      className="text-sm rounded-full border border-teal-200 bg-teal-50 text-teal-800 px-3 py-1"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-slate-600 mt-3 text-sm">
+                  Don’t see your industry?{' '}
+                  <a href="#/consultation" className="text-teal-700 underline">
+                    Book a quick consult
+                  </a>{' '}
+                  — we’ll tailor a solution.
+                </p>
+              </div>
+            </section>
+            <CTA />
+          </>
+        );
+      }
+
+      function AboutPage() {
+        return (
+          <section className="py-16">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">About Us</h1>
+              <p className="mt-4 text-lg text-slate-700">
+                At {CONFIG.companyName}, we help businesses stay connected to their clients through smart, reliable solutions. Our AI‑powered receptionists answer calls, book appointments, and handle inquiries around the clock, while our custom websites give businesses a professional online presence that drives growth.
+              </p>
+              <p className="mt-4 text-lg text-slate-700">
+                We believe every company deserves a clear, simple pipeline between themselves and their clients — and we make that possible by combining cutting‑edge technology with an approachable, human‑first approach.
+              </p>
+              <div className="mt-8 grid sm:grid-cols-2 gap-4">
+                <ValueCard title="Approachable Tech" desc="Plain‑language solutions your team can actually use." />
+                <ValueCard title="Pipeline Focused" desc="From first call to scheduled appointment — seamless." />
+                <ValueCard title="One Partner" desc="Web + phone + chat handled end‑to‑end by us." />
+                <ValueCard title="Toronto‑Based" desc="Local support with global‑class execution." />
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      function ServicesPage() {
+        return (
+          <section className="py-16">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Services</h1>
+              <div className="mt-8 grid lg:grid-cols-2 gap-8">
+                <ServiceBlock
+                  title="AI Phone Receptionist"
+                  icon={<PhoneIcon />}
+                  bullets={[
+                    'Answers and routes incoming calls',
+                    'Books appointments to your calendar',
+                    'Collects leads & messages',
+                    'After‑hours & overflow handling',
+                  ]}
+                  note="Cut missed calls, capture more bookings, and reduce front‑desk costs."
+                />
+                <ServiceBlock
+                  title="Website Chat Concierge"
+                  icon={<ChatIcon />}
+                  bullets={[
+                    '24/7 instant FAQ & triage',
+                    'Lead intake with qualification',
+                    'Secure handoff to your staff',
+                    'CRM sync & analytics',
+                  ]}
+                  note="Turn visitors into clients with fast, friendly responses."
+                />
+                <ServiceBlock
+                  title="Complex Web Development"
+                  icon={<CodeIcon />}
+                  bullets={[
+                    'Modern, fast, responsive sites',
+                    'Booking, payments, portals',
+                    'Custom dashboards & integrations',
+                    'SEO and performance optimization',
+                  ]}
+                  note="Not just a pretty site — built to convert and scale."
+                />
+                <ServiceBlock
+                  title="Integrations & Pipeline"
+                  icon={<PlugIcon />}
+                  bullets={[
+                    'Google/Outlook Calendar',
+                    'HubSpot, Pipedrive, Airtable',
+                    'Stripe, Square, QuickBooks',
+                    'Twilio/Voice, WhatsApp, Zoom',
+                  ]}
+                  note="We connect the tools you already use into one smooth flow."
+                />
+              </div>
+              <div className="mt-10">
+                <a
+                  href="#/consultation"
+                  className="inline-flex items-center rounded-xl px-5 py-3 bg-teal-600 text-white font-semibold hover:bg-teal-700 shadow-md shadow-teal-600/20"
+                >
+                  Book a Consultation
+                </a>
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      function ContactPage() {
+        return (
+          <section className="py-16">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-10">
+              <div>
+                <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Contact</h1>
+                <p className="mt-3 text-slate-700">Have a project or want to see a demo? Reach out and we’ll respond quickly.</p>
+                <ul className="mt-5 space-y-2 text-slate-700">
+                  <li className="flex items-center gap-2">
+                    <PhoneIcon />
+                    <a
+                      className="underline decoration-teal-300 hover:decoration-teal-500"
+                      href={"tel:" + CONFIG.phoneE164}
+                    >
+                      {CONFIG.phonePretty}
+                    </a>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <MailIcon />
+                    <a
+                      className="underline decoration-teal-300 hover:decoration-teal-500"
+                      href={"mailto:" + CONFIG.email}
+                    >
+                      {CONFIG.email}
+                    </a>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <PinIcon />
+                    {CONFIG.location}
+                  </li>
+                </ul>
+                <div className="mt-6 rounded-2xl border border-teal-200 bg-white/70 p-4">
+                  <div className="text-sm text-slate-600">
+                    Prefer a quick call?{' '}
+                    <a href={"tel:" + CONFIG.phoneE164} className="text-teal-700 underline">
+                      Tap to phone us now
+                    </a>
+                    .
+                  </div>
+                </div>
+              </div>
+              <ContactForm />
+            </div>
+          </section>
+        );
+      }
+
+      function CalendlyEmbed({ url }) {
+        return (
+          <div className="mt-6 rounded-3xl border border-teal-100 bg-white/70 overflow-hidden">
+            <iframe
+              src={url}
+              title="Schedule with LaunchPad Ai Studios"
+              style={{ width: '100%', height: '720px', border: '0' }}
+              loading="lazy"
+            />
+          </div>
+        );
+      }
+
+      function BookPage() {
+        const [loadEmbed, setLoadEmbed] = React.useState(false);
+        const hasCalendly = !!CONFIG.calendlyUrl;
+        return (
+          <section className="py-16">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Consultation</h1>
+              <p className="mt-3 text-slate-700">Pick a time that works and we’ll confirm by email.</p>
+              {hasCalendly ? (
+                <>
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
+                    Some previews block external schedulers. You can{' '}
+                    <strong>open Calendly in a new tab</strong> or{' '}
+                    <strong>load it inside this page</strong> below.
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <a
+                      href={CONFIG.calendlyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center rounded-xl px-5 py-3 border border-teal-300/70 bg-white/70 hover:bg-white/90 text-teal-800"
+                    >
+                      Open Calendly to Book
+                    </a>
+                    <button
+                      onClick={() => setLoadEmbed(true)}
+                      className="inline-flex items-center rounded-xl px-5 py-3 bg-teal-600 text-white font-semibold hover:bg-teal-700 shadow-md shadow-teal-600/20"
+                    >
+                      Load Calendly Here
+                    </button>
+                  </div>
+                  {loadEmbed ? (
+                    <CalendlyEmbed url={CONFIG.calendlyUrl} />
+                  ) : (
+                    <div className="mt-6 rounded-2xl border border-slate-200 bg-white/70 p-5 text-slate-700">
+                      <p className="font-medium">How to book:</p>
+                      <ol className="list-decimal pl-5 mt-2 space-y-1 text-sm">
+                        <li>
+                          Click{' '}
+                          <span className="font-semibold">Open Calendly to Book</span>{' '}
+                          or{' '}
+                          <span className="font-semibold">Load Calendly Here</span>.
+                        </li>
+                        <li>Pick your time and confirm.</li>
+                        <li>You’ll receive an email confirmation right away.</li>
+                      </ol>
+                      <p className="mt-3 text-sm">
+                        If Calendly doesn’t load, your browser may be blocking embeds. Use the “Open Calendly to Book” button above.
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
+                  Our scheduling link isn’t set yet. Please{' '}
+                  <a href="#/contact" className="underline">
+                    contact us
+                  </a>{' '}
+                  to book your consultation.
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
+
+      /* -------------- SMALLER COMPONENTS -------------- */
+      function FeatureCard({ title, subtitle, icon }) {
+        return (
+          <div className="rounded-2xl p-4 border border-slate-200 bg-white/70">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-teal-600/10 text-teal-700 p-2">{icon}</div>
+              <div>
+                <div className="font-semibold text-slate-900">{title}</div>
+                <div className="text-sm text-slate-600">{subtitle}</div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function ValueCard({ title, desc }) {
+        return (
+          <div className="rounded-2xl p-5 border border-teal-100 bg-white/80">
+            <div className="flex items-start gap-3">
+              <CheckIcon />
+              <div>
+                <div className="font-semibold text-slate-900">{title}</div>
+                <div className="text-slate-600">{desc}</div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function ServiceBlock({ title, bullets, note, icon }) {
+        return (
+          <div className="rounded-3xl p-6 border border-teal-100 bg-white/70">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-teal-600/10 text-teal-700 p-2">{icon}</div>
+              <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+            </div>
+            <ul className="mt-4 space-y-2 text-slate-700">
+              {bullets.map((b, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <SmallCheck /> <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-3">
+              {note}
+            </div>
+          </div>
+        );
+      }
+
+      function CTA() {
+        return (
+          <section className="py-16">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="rounded-3xl border border-teal-200 bg-gradient-to-r from-teal-50 via-white to-amber-50 p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                  <h3 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                    Ready to reinvent your front desk?
+                  </h3>
+                  <p className="text-slate-700 mt-1">
+                    Get a live demo of our AI receptionist and a site review in 24 hours.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <a
+                    href="#/consultation"
+                    className="inline-flex items-center rounded-xl px-5 py-3 bg-teal-600 text-white font-semibold hover:bg-teal-700 shadow-md shadow-teal-600/20"
+                  >
+                    Consultation
+                  </a>
+                  <a
+                    href="#/contact"
+                    className="inline-flex items-center rounded-xl px-5 py-3 border border-teal-300/70 bg-white/70 hover:bg-white/90 text-teal-800"
+                  >
+                    Contact
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      /* -------------- FORMS -------------- */
+      function ContactForm() {
+        const [sent, setSent] = React.useState(false);
+        const [sending, setSending] = React.useState(false);
+        const [error, setError] = React.useState('');
+        async function onSubmit(e) {
+          e.preventDefault();
+          setError('');
+          const form = e.currentTarget;
+          const data = Object.fromEntries(new FormData(form).entries());
+          const subject = 'New Contact — ' + CONFIG.companyName;
+          const payload = {
+            name: data['full-name'] || '',
+            company: data['company'] || '',
+            email: data['email'] || '',
+            phone: data['phone'] || '',
+            message: data['how-can-we-help'] || '',
+            _subject: subject,
+            _captcha: 'false',
+          };
+          if (CONFIG.formEndpoint) {
+            try {
+              setSending(true);
+              const res = await fetch(CONFIG.formEndpoint, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Accept: 'application/json',
+                },
+                body: JSON.stringify(payload),
+              });
+              if (!res.ok) throw new Error('Request failed');
+              setSent(true);
+              setSending(false);
+              form.reset();
+              return;
+            } catch (err) {
+              setSending(false);
+              setError('Could not send automatically. Opening your email app instead.');
+            }
+          }
+          // Fallback: open user's mail app
+          const lines = [
+            `Name: ${payload.name}`,
+            `Company: ${payload.company}`,
+            `Email: ${payload.email}`,
+            `Phone: ${payload.phone}`,
+            '',
+            'Message:',
+            `${payload.message}`,
+          ];
+          const mailto = `mailto:${CONFIG.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
+          window.location.href = mailto;
+          setSent(true);
+        }
+        return (
+          <form onSubmit={onSubmit} className="rounded-3xl border border-teal-100 bg-white/70 p-6">
+            {sent ? (
+              <SuccessBox title="Message sent!" subtitle="Thanks — we’ll reply shortly." />
+            ) : (
+              <>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <TextField label="Full Name" required />
+                  <TextField label="Company" />
+                  <TextField type="email" label="Email" required />
+                  <TextField type="tel" label="Phone" />
+                </div>
+                <TextArea
+                  label="How can we help?"
+                  placeholder="Tell us about your goals or current challenges…"
+                  required
+                />
+                {error && (
+                  <div className="mt-3 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                    {error}
+                  </div>
+                )}
+                <div className="mt-4 flex items-center justify-between">
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                    <input type="checkbox" className="accent-teal-600" /> Subscribe to updates
+                  </label>
+                  <button
+                    disabled={sending}
+                    className="rounded-xl px-5 py-3 bg-teal-600 text-white font-semibold hover:bg-teal-700 disabled:opacity-60"
+                  >
+                    {sending ? 'Sending…' : 'Send Message'}
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+        );
+      }
+
+      function SuccessBox({ title, subtitle }) {
+        return (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+            <div className="flex items-start gap-3">
+              <SmallCheck />
+              <div>
+                <div className="font-semibold">{title}</div>
+                <div className="text-sm">{subtitle}</div>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-3">
+              <a
+                href="#/"
+                className="inline-flex items-center rounded-xl px-4 py-2 border border-emerald-300 bg-white/60 hover:bg-white"
+              >
+                Go Home
+              </a>
+              <a
+                href="#/contact"
+                className="inline-flex items-center rounded-xl px-4 py-2 border border-emerald-300 bg-white/60 hover:bg-white"
+              >
+                Contact
+              </a>
+            </div>
+          </div>
+        );
+      }
+
+      function TextField({ label, name, type = 'text', required }) {
+        const id = useIdish(name || label);
+        return (
+          <div className="flex flex-col gap-1">
+            <label htmlFor={id} className="text-sm font-medium text-slate-700">
+              {label}
+              {required && <span className="text-rose-500"> *</span>}
+            </label>
+            <input
+              id={id}
+              name={name || id}
+              type={type}
+              required={required}
+              className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 outline-none focus:ring-2 focus:ring-teal-500/40"
+            />
+          </div>
+        );
+      }
+      function TextArea({ label, name, placeholder, required }) {
+        const id = useIdish(name || label);
+        return (
+          <div className="flex flex-col gap-1 mt-2">
+            <label htmlFor={id} className="text-sm font-medium text-slate-700">
+              {label}
+              {required && <span className="text-rose-500"> *</span>}
+            </label>
+            <textarea
+              id={id}
+              name={name || id}
+              placeholder={placeholder}
+              required={required}
+              rows={5}
+              className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 outline-none focus:ring-2 focus:ring-teal-500/40"
+            />
+          </div>
+        );
+      }
+      function SelectField({ label, name, options = [] }) {
+        const id = useIdish(name || label);
+        return (
+          <div className="flex flex-col gap-1">
+            <label htmlFor={id} className="text-sm font-medium text-slate-700">
+              {label}
+            </label>
+            <select
+              id={id}
+              name={name || id}
+              className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 outline-none focus:ring-2 focus:ring-teal-500/40"
+            >
+              {options.map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+          </div>
+        );
+      }
+      function useIdish(base) {
+        const [id] = React.useState(() => {
+          return base ? slug(base) : Math.random().toString(36).slice(2);
+        });
+        return id;
+      }
+      function slug(s) {
+        return String(s)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+      }
+
+      /* -------------- ICON COMPONENTS -------------- */
+      function CheckIcon() {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-teal-700">
+            <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      }
+      function SmallCheck() {
+        return (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-emerald-700">
+            <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      }
+      function PhoneIcon() {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M22 16.92v2a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.92 4.18 2 2 0 0 1 4.92 2h2a2 2 0 0 1 2 1.72c.12.89.32 1.76.59 2.58a2 2 0 0 1-.45 2.11L8 9a16 16 0 0 0 7 7l.59-1.06a2 2 0 0 1 2.11-.45c.82.27 1.69.47 2.58.59A2 2 0 0 1 22 16.92z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        );
+      }
+      function ChatIcon() {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M21 15a4 4 0 0 1-4 4H8l-5 3V6a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v9Z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        );
+      }
+      function CodeIcon() {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M16 18l6-6-6-6M8 6l-6 6 6 6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        );
+      }
+      function PlugIcon() {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 22v-4M9 7V2m6 0v5M6 10h12a4 4 0 010 8H6a4 4 0 010-8z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        );
+      }
+      function MailIcon() {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="2" />
+            <path d="M22 6l-10 7L2 6" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        );
+      }
+      function PinIcon() {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 22s7-4.35 7-11a7 7 0 10-14 0c0 6.65 7 11 7 11z"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+            <circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        );
+      }
+
+      // Mount the application
+      const rootElement = document.getElementById('root');
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<App />);
+    </script>
+  </body>
+</html>
